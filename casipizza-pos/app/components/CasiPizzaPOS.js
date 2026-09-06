@@ -12,6 +12,7 @@ const MENU = [
   { id: "crisis", name: "Crisis existencial", price: 40 },
   { id: "chocoflan", name: "Choco Flan", price: 10 },
   { id: "baba", name: "Babá al ron", price: 10 },
+  { id: "porcion", name: "Porción", price: 10 },
 ];
 
 const PAYMENT_METHODS = [
