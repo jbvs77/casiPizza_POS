@@ -7,9 +7,8 @@ import { useState, useEffect, useCallback } from "react";
 // ---------------------------------------------------------------
 const MENU = [
   { id: "culpable", name: "La culpable", price: 35 },
-  { id: "hawaiana", name: "Hawaiana", price: 35 },
-  { id: "cita", name: "Tengo una cita", price: 35 },
   { id: "crisis", name: "Crisis existencial", price: 40 },
+  { id: "nadota", name: "Todo o mejor nadota", price: 50 },
   { id: "chocoflan", name: "Choco Flan", price: 10 },
   { id: "baba", name: "Babá al ron", price: 10 },
   { id: "porcion", name: "Porción", price: 10 },
@@ -41,6 +40,7 @@ function formatOrderNumber(n) {
 }
 
 function formatTime(iso) {
+  if (!iso) return "";
   const d = new Date(iso);
   return d.toLocaleString("es-GT", {
     weekday: "short",
@@ -86,7 +86,7 @@ export default function CasiPizzaPOS() {
   }
 
   async function guardarOrden() {
-    if (!payment || activeItems.length === 0) return;
+    if (saving || !payment || activeItems.length === 0) return;
     setSaving(true);
     setSaveError(null);
     try {
@@ -97,7 +97,7 @@ export default function CasiPizzaPOS() {
           items: activeItems.map((i) => ({
             id: i.id,
             name: i.name,
-            unitPrice: i.price,
+            price: i.price,
             qty: i.qty,
           })),
           total,
@@ -111,7 +111,7 @@ export default function CasiPizzaPOS() {
       setConfirmation(data.order);
       setCart({});
       setPayment(null);
-      setHistory(null); // fuerza recarga la próxima vez que se abra el historial
+      setHistory(null); // Fuerza recarga del historial al volver
       setScreen("menu");
     } catch (err) {
       setSaveError(
@@ -227,7 +227,7 @@ function Stepper({ value, onChange }) {
   return (
     <div style={styles.stepper}>
       <button
-        style={styles.stepBtn}
+        style={{ ...styles.stepBtn, opacity: value === 0 ? 0.4 : 1 }}
         onClick={() => onChange(value - 1)}
         disabled={value === 0}
         aria-label="Restar"
@@ -272,7 +272,11 @@ function MenuScreen({ items, total, setQty, limpiar, irAOrdenar }) {
         <button style={styles.secondaryBtn} onClick={limpiar}>
           Cancelar
         </button>
-        <button style={styles.primaryBtn} onClick={irAOrdenar} disabled={total === 0}>
+        <button 
+          style={{ ...styles.primaryBtn, opacity: total === 0 ? 0.5 : 1 }} 
+          onClick={irAOrdenar} 
+          disabled={total === 0}
+        >
           Ordenar
         </button>
       </div>
@@ -339,7 +343,14 @@ function SummaryScreen({
         <button style={styles.secondaryBtn} onClick={onVolver} disabled={saving}>
           Volver
         </button>
-        <button style={styles.primaryBtn} onClick={onGuardar} disabled={!payment || saving}>
+        <button
+          style={{
+            ...styles.primaryBtn,
+            opacity: !payment || saving ? 0.5 : 1,
+          }}
+          onClick={onGuardar}
+          disabled={!payment || saving}
+        >
           {saving ? "Guardando…" : "Guardar"}
         </button>
       </div>
@@ -399,7 +410,7 @@ function HistoryScreen({
         <div style={styles.list}>
           {orders.map((order, idx) => (
             <div
-              key={order.orderNumber}
+              key={order.orderNumber || idx}
               style={{
                 ...styles.historyRow,
                 borderBottom: idx === orders.length - 1 ? "none" : `1px solid ${COLORS.line}`,
@@ -441,7 +452,7 @@ function ConfirmationToast({ order, onClose }) {
 
 const styles = {
   app: {
-    fontFamily: "var(--font-inter), sans-serif",
+    fontFamily: "var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif",
     background: COLORS.cream,
     minHeight: "100vh",
     color: COLORS.ink,
@@ -460,7 +471,7 @@ const styles = {
     borderBottomRightRadius: 18,
   },
   brand: {
-    fontFamily: "var(--font-fraunces), serif",
+    fontFamily: "var(--font-fraunces), Georgia, serif",
     fontSize: 26,
     fontWeight: 600,
     letterSpacing: 0.2,
@@ -477,6 +488,7 @@ const styles = {
     borderRadius: 999,
     padding: "6px 14px",
     fontSize: 13,
+    cursor: "pointer",
   },
   screen: {
     padding: "18px 16px 8px",
@@ -519,6 +531,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    cursor: "pointer",
   },
   stepValue: {
     minWidth: 18,
@@ -537,7 +550,7 @@ const styles = {
     color: COLORS.muted,
   },
   totalValue: {
-    fontFamily: "var(--font-fraunces), serif",
+    fontFamily: "var(--font-fraunces), Georgia, serif",
     fontSize: 28,
     fontWeight: 600,
     color: COLORS.wine,
@@ -556,6 +569,7 @@ const styles = {
     padding: "15px 0",
     fontSize: 16,
     fontWeight: 600,
+    cursor: "pointer",
   },
   secondaryBtn: {
     flex: 1,
@@ -566,6 +580,7 @@ const styles = {
     padding: "15px 0",
     fontSize: 16,
     fontWeight: 600,
+    cursor: "pointer",
   },
   card: {
     background: COLORS.paper,
@@ -609,6 +624,7 @@ const styles = {
     color: COLORS.ink,
     fontSize: 15,
     fontWeight: 500,
+    cursor: "pointer",
   },
   paymentBtnActive: {
     background: COLORS.wine,
@@ -632,7 +648,7 @@ const styles = {
     color: COLORS.gold,
   },
   todaySummaryTotal: {
-    fontFamily: "var(--font-fraunces), serif",
+    fontFamily: "var(--font-fraunces), Georgia, serif",
     fontSize: 26,
     fontWeight: 600,
     marginTop: 4,
@@ -686,5 +702,7 @@ const styles = {
     borderRadius: 999,
     fontSize: 14,
     boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+    cursor: "pointer",
+    zIndex: 100,
   },
 };
