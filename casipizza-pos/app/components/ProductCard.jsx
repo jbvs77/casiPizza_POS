@@ -4,6 +4,7 @@ export default function ProductCard({ product, onClick }) {
   return (
     <div
       onClick={onClick}
+      className="product-card"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -33,6 +34,7 @@ export default function ProductCard({ product, onClick }) {
         <img
           src={product.image}
           alt={product.name}
+          className="product-card-img"
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       </div>
