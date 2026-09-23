@@ -17,7 +17,7 @@ html {
 
 @media (min-width: 768px) and (max-width: 1024px) {
   html {
-    font-size: 18px; /* Ajuste más grande y legible para iPad/Tablets */
+    font-size: 18px; /* Ajuste más grande para iPad/Tablets */
   }
 }
 
@@ -30,7 +30,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: #00232F; /* 50% Dominante */
+  background-color: #00232F;
   color: #F8FAE3;
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
@@ -90,19 +90,27 @@ button:disabled {
   transform: none;
 }
 
-/* Efectos de Hover y Active en Tarjetas de Producto */
+/* ===================================================
+   TARJETAS DE PRODUCTO: HOVER, TOUCH & RENDIMIENTO GPU
+   =================================================== */
+
 .product-card {
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), 
-              box-shadow 0.2s ease, 
-              border-color 0.2s ease;
-  touch-action: manipulation; /* Elimina lag de tap en móviles */
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              box-shadow 0.15s ease, 
+              border-color 0.15s ease;
+  touch-action: manipulation;
   user-select: none;
+  
+  /* Aceleración por GPU */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: layout style paint;
 }
 
 /* HOVER (Desktop): Elevar tarjeta */
 @media (hover: hover) {
   .product-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-4px) translateZ(0);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
   }
 
@@ -111,9 +119,9 @@ button:disabled {
   }
 }
 
-/* ACTIVE / TOUCH (Móviles y Click): Efecto de compresión y brillo */
+/* ACTIVE / TOUCH (Móviles y Click): Compresión y brillo instantáneo */
 .product-card:active {
-  transform: scale(0.95) !important;
+  transform: scale(0.95) translateZ(0) !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -121,9 +129,8 @@ button:disabled {
   filter: brightness(1.18) contrast(1.05);
 }
 
-/* Transición suave para la imagen interna */
+/* Transición optimizada para la imagen interna */
 .product-card-img {
-  transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), 
-              filter 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), filter 0.15s ease;
   will-change: transform, filter;
 }

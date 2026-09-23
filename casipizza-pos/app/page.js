@@ -6,7 +6,7 @@ import ProductCard from "./components/ProductCard";
 import CartHeader from "./components/CartHeader";
 import ActionButton from "./components/ActionButton";
 
-const LOCAL_IMAGE = "/imagenes/pizza.jpg";
+const LOCAL_IMAGE = "/imagenes/pizza.webp";
 
 // PIZZAS CLÁSICAS
 const PIZZAS_CLASICAS = [

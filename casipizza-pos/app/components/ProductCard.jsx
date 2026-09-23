@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function ProductCard({ product, onClick }) {
   const isPremium = product.isPremium;
 
@@ -29,13 +31,17 @@ export default function ProductCard({ product, onClick }) {
           backgroundColor: "#00232F",
           marginBottom: "0.75rem",
           border: isPremium ? "3px solid #F8FAE3" : "3px solid #CA3918",
+          position: "relative", // Necesario para next/image con fill
         }}
       >
-        <img
+        <Image
           src={product.image}
           alt={product.name}
+          fill
+          sizes="(max-width: 600px) 120px, 150px"
           className="product-card-img"
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          style={{ objectFit: "cover" }}
+          priority={false} // Lazy loading activado
         />
       </div>
       <span
