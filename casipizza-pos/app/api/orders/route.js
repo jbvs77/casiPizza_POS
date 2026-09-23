@@ -8,7 +8,6 @@ export async function GET() {
       return Response.json({ orders: [] });
     }
 
-    // Parsea y tolera cualquier formato anterior
     const orders = raw
       .map((r) => {
         try {
@@ -33,13 +32,12 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { items, total, paymentMethod } = body;
+    const { items, total, paymentMethod, comments } = body;
 
     if (!Array.isArray(items) || items.length === 0 || !paymentMethod) {
       return Response.json({ error: "Datos incompletos" }, { status: 400 });
     }
 
-    // Genera el número de orden consecutivo
     const orderNumber = await kv.incr("order-counter");
 
     const order = {
@@ -53,6 +51,7 @@ export async function POST(request) {
       })),
       total: Number(total) || 0,
       paymentMethod,
+      comments: comments || "", // Se guarda el comentario si existe
     };
 
     await kv.lpush("orders:list", JSON.stringify(order));
@@ -64,5 +63,33 @@ export async function POST(request) {
       { error: "No se pudo guardar la orden en la base de datos." },
       { status: 500 }
     );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const orderNumber = Number(searchParams.get("orderNumber"));
+
+    if (!orderNumber) {
+      return Response.json({ error: "OrderNumber inválido" }, { status: 400 });
+    }
+
+    const raw = await kv.lrange("orders:list", 0, -1);
+    
+    // Filtramos las órdenes descartando la que queremos eliminar
+    for (const item of raw) {
+      const parsed = typeof item === "string" ? JSON.parse(item) : item;
+      if (parsed && parsed.orderNumber === orderNumber) {
+        // Removemos el registro exacto en Redis KV
+        await kv.lrem("orders:list", 1, typeof item === "string" ? item : JSON.stringify(item));
+        break;
+      }
+    }
+
+    return Response.json({ success: true });
+  } catch (err) {
+    console.error("Error en DELETE /api/orders:", err);
+    return Response.json({ error: "Error al eliminar orden" }, { status: 500 });
   }
 }

@@ -8,14 +8,12 @@ import ActionButton from "./components/ActionButton";
 
 const LOCAL_IMAGE = "/imagenes/pizza.webp";
 
-// PIZZAS CLÁSICAS
 const PIZZAS_CLASICAS = [
   { id: "crisis", name: "Crisis", price: 35, image: LOCAL_IMAGE },
   { id: "todote", name: "Todo o mejor nadota", price: 50, image: LOCAL_IMAGE },
   { id: "culpable", name: "La culpable", price: 35, image: LOCAL_IMAGE },
 ];
 
-// PIZZAS PREMIUM
 const PIZZAS_PREMIUM = [
   { id: "margherita", name: "Margherita", price: "Q.tba", image: LOCAL_IMAGE, isPremium: true },
   { id: "aura", name: "+aura Prosciutto e Rucola", price: "Q.tba", image: LOCAL_IMAGE, isPremium: true },
@@ -23,12 +21,10 @@ const PIZZAS_PREMIUM = [
   { id: "marinara", name: "Marinara", price: "Q.tba", image: LOCAL_IMAGE, isPremium: true },
 ];
 
-// EXTRAS / TOPPINGS
 const EXTRAS = [
   { id: "burrata", name: "Agrega Burrata Extra", price: 50, image: LOCAL_IMAGE },
 ];
 
-// POSTRES
 const POSTRES = [
   { id: "chocoflan", name: "Choco Flan", price: 10, image: LOCAL_IMAGE },
   { id: "baba", name: "Babá al ron", price: 10, image: LOCAL_IMAGE },
@@ -37,6 +33,7 @@ const POSTRES = [
 export default function CasiPizzaPOS() {
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("efectivo");
+  const [comments, setComments] = useState("");
   const [view, setView] = useState("pos");
   const [orders, setOrders] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -78,6 +75,7 @@ export default function CasiPizzaPOS() {
 
   const handleCancel = () => {
     setCart([]);
+    setComments("");
     setView("pos");
   };
 
@@ -94,6 +92,23 @@ export default function CasiPizzaPOS() {
     }
   };
 
+  const handleDeleteOrder = async (orderNumber) => {
+    if (!confirm(`¿Estás seguro de eliminar la orden #${orderNumber}?`)) return;
+
+    try {
+      const res = await fetch(`/api/orders?orderNumber=${orderNumber}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => o.orderNumber !== orderNumber));
+      } else {
+        alert("Error al eliminar la orden");
+      }
+    } catch (err) {
+      alert("Error de conexión");
+    }
+  };
+
   useEffect(() => {
     if (view === "history") fetchHistory();
   }, [view]);
@@ -105,11 +120,12 @@ export default function CasiPizzaPOS() {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart, total: totalAmount, paymentMethod }),
+        body: JSON.stringify({ items: cart, total: totalAmount, paymentMethod, comments }),
       });
 
       if (res.ok) {
         setCart([]);
+        setComments("");
         setView("pos");
         alert("¡Orden realizada con éxito!");
       }
@@ -120,6 +136,20 @@ export default function CasiPizzaPOS() {
     }
   };
 
+  // Formateador de fecha/hora
+  const formatDate = (isoString) => {
+    if (!isoString) return "";
+    const d = new Date(isoString);
+    return d.toLocaleString("es-GT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
   return (
     <main className="pos-container">
       <HeaderNav activeView={view} onViewChange={setView} />
@@ -127,12 +157,8 @@ export default function CasiPizzaPOS() {
       {/* VISTA 1: POS */}
       {view === "pos" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          
-          {/* SECCIÓN 1: PIZZAS */}
           <div>
             <h2 style={categoryTitleStyle}>PIZZAS</h2>
-
-            {/* Subgrupo Clásicas */}
             <div style={{ marginBottom: "1.25rem" }}>
               <span style={subCategoryTitleStyle}>CLÁSICAS</span>
               <div className="products-grid">
@@ -142,7 +168,6 @@ export default function CasiPizzaPOS() {
               </div>
             </div>
 
-            {/* Subgrupo Premium */}
             <div>
               <span style={{ ...subCategoryTitleStyle, color: "#CA3918" }}>★ PREMIUM</span>
               <div className="products-grid">
@@ -153,7 +178,6 @@ export default function CasiPizzaPOS() {
             </div>
           </div>
 
-          {/* SECCIÓN 2: EXTRAS / TOPPINGS */}
           <div style={{ marginTop: "1.25rem" }}>
             <h2 style={categoryTitleStyle}>EXTRAS & BURRATA</h2>
             <div className="products-grid">
@@ -163,7 +187,6 @@ export default function CasiPizzaPOS() {
             </div>
           </div>
 
-          {/* SECCIÓN 3: POSTRES */}
           <div style={{ marginTop: "1.25rem" }}>
             <h2 style={categoryTitleStyle}>POSTRES</h2>
             <div className="products-grid">
@@ -173,7 +196,6 @@ export default function CasiPizzaPOS() {
             </div>
           </div>
 
-          {/* RESUMEN DE CARRITO */}
           <CartHeader
             totalAmount={totalAmount}
             cart={cart}
@@ -181,30 +203,20 @@ export default function CasiPizzaPOS() {
             onRemoveAll={handleRemoveAll}
           />
 
-          {/* BOTONES DE ACCIÓN */}
           <div className="actions-grid">
             <ActionButton label="COBRAR" variant="primary" disabled={cart.length === 0} onClick={() => setView("checkout")} />
             <ActionButton label="CANCELAR" variant="neutral" onClick={handleCancel} />
           </div>
-
         </div>
       )}
 
-      {/* VISTA 2: CHECKOUT */}
+      {/* VISTA 2: CHECKOUT (Reorganizada: Resumen -> Comentarios -> Métodos & Botones) */}
       {view === "checkout" && (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div className="actions-grid">
-            <ActionButton label="EFECTIVO" variant={paymentMethod === "efectivo" ? "primary" : "neutral"} onClick={() => setPaymentMethod("efectivo")} />
-            <ActionButton label="TRANSFERENCIA" variant={paymentMethod === "transferencia" ? "primary" : "neutral"} onClick={() => setPaymentMethod("transferencia")} />
-          </div>
-
-          <div className="actions-grid" style={{ margin: "1.5rem 0 2.5rem" }}>
-            <ActionButton label={savingOrder ? "GUARDANDO..." : "CONFIRMAR"} variant="primary" disabled={savingOrder} onClick={handleConfirmOrder} />
-            <ActionButton label="CANCELAR" variant="neutral" onClick={() => setView("pos")} />
-          </div>
-
-          <div style={{ width: "100%", marginTop: "auto" }}>
-            <h2 style={{ fontSize: "2rem", color: "#CA3918", margin: "0 0 1.25rem 0" }}>RESUMEN DE ORDEN</h2>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1.5rem", padding: "1rem 0" }}>
+          
+          {/* 1. ARRIBA: RESUMEN DE ORDEN */}
+          <div style={{ width: "100%" }}>
+            <h2 style={{ fontSize: "2rem", color: "#CA3918", margin: "0 0 1rem 0" }}>RESUMEN DE ORDEN</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
               {cart.map((item) => (
                 <div key={item.id} style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", fontSize: "1.35rem", color: "#F8FAE3" }}>
@@ -220,10 +232,46 @@ export default function CasiPizzaPOS() {
               </div>
             </div>
           </div>
+
+          {/* 2. EN MEDIO: CAMPO DE COMENTARIOS / NOTAS */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <label style={{ fontSize: "1.1rem", color: "#4EA3CB" }}>COMENTARIOS / NOTAS (Opcional):</label>
+            <input
+              type="text"
+              placeholder="Ej. TEST, sin cebolla, mesa 2..."
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "0.85rem",
+                borderRadius: "0.5rem",
+                border: "2px solid #4EA3CB",
+                backgroundColor: "#F8FAE3",
+                color: "#00232F",
+                fontSize: "1.1rem",
+                fontFamily: "sans-serif",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          {/* 3. ABAJO: MÉTODO DE PAGO Y BOTONES DE ACCIÓN */}
+          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div className="actions-grid">
+              <ActionButton label="EFECTIVO" variant={paymentMethod === "efectivo" ? "primary" : "neutral"} onClick={() => setPaymentMethod("efectivo")} />
+              <ActionButton label="TRANSFERENCIA" variant={paymentMethod === "transferencia" ? "primary" : "neutral"} onClick={() => setPaymentMethod("transferencia")} />
+            </div>
+
+            <div className="actions-grid">
+              <ActionButton label={savingOrder ? "GUARDANDO..." : "CONFIRMAR"} variant="primary" disabled={savingOrder} onClick={handleConfirmOrder} />
+              <ActionButton label="CANCELAR" variant="neutral" onClick={() => setView("pos")} />
+            </div>
+          </div>
+
         </div>
       )}
 
-      {/* VISTA 3: HISTORIAL */}
+      {/* VISTA 3: HISTORIAL (Con Fecha y Opción de Eliminar) */}
       {view === "history" && (
         <div style={{ flex: 1, padding: "1rem 0" }}>
           <h2 style={{ fontSize: "2rem", color: "#CA3918", marginBottom: "1.25rem" }}>HISTORIAL DE VENTAS</h2>
@@ -233,11 +281,40 @@ export default function CasiPizzaPOS() {
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               {orders.map((o) => (
                 <div key={o.orderNumber} style={{ border: "2px solid #4EA3CB", backgroundColor: "#F8FAE3", padding: "1rem", borderRadius: "0.75rem", color: "#00232F" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.25rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "1.25rem", fontWeight: "bold" }}>
                     <span>ORDEN #{o.orderNumber} ({o.paymentMethod.toUpperCase()})</span>
-                    <span style={{ color: "#CA3918" }}>Q.{o.total}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <span style={{ color: "#CA3918" }}>Q.{o.total}</span>
+                      <button
+                        onClick={() => handleDeleteOrder(o.orderNumber)}
+                        style={{
+                          backgroundColor: "#CA3918",
+                          color: "#F8FAE3",
+                          padding: "0.25rem 0.6rem",
+                          borderRadius: "0.3rem",
+                          fontSize: "0.85rem",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        BORRAR
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ color: "#00232F", opacity: 0.7, fontSize: "1rem", marginTop: "0.25rem" }}>
+
+                  {/* Fecha y Hora */}
+                  <div style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.2rem" }}>
+                    {formatDate(o.timestamp)}
+                  </div>
+
+                  {/* Comentario si existe */}
+                  {o.comments && (
+                    <div style={{ marginTop: "0.4rem", padding: "0.3rem 0.5rem", backgroundColor: "#EAEAEA", borderRadius: "0.3rem", fontSize: "0.95rem", color: "#00232F", fontStyle: "italic" }}>
+                      <strong>Nota:</strong> {o.comments}
+                    </div>
+                  )}
+
+                  {/* Detalle de Items */}
+                  <div style={{ color: "#00232F", opacity: 0.8, fontSize: "1rem", marginTop: "0.5rem" }}>
                     {o.items?.map((i) => `${i.qty}x ${i.name}`).join(", ")}
                   </div>
                 </div>
