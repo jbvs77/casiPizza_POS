@@ -22,10 +22,16 @@ export async function GET() {
     return Response.json({ orders });
   } catch (err) {
     console.error("Error en GET /api/orders:", err);
+    // Agrega estas cabeceras a la respuesta del GET en app/api/orders/route.js
     return Response.json(
-      { error: "No se pudo cargar el historial desde la base de datos." },
-      { status: 500 }
-    );
+      { orders },
+      {
+        headers: {
+          "Access-Control-Allow-Origin": "*", // O el dominio exacto de tu app de analítica
+          "Access-Control-Allow-Methods": "GET",
+        },
+      }
+    )
   }
 }
 
@@ -76,7 +82,7 @@ export async function DELETE(request) {
     }
 
     const raw = await kv.lrange("orders:list", 0, -1);
-    
+
     // Filtramos las órdenes descartando la que queremos eliminar
     for (const item of raw) {
       const parsed = typeof item === "string" ? JSON.parse(item) : item;

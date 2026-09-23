@@ -5,7 +5,7 @@ import HeaderNav from "./components/HeaderNav";
 import ProductCard from "./components/ProductCard";
 import CartHeader from "./components/CartHeader";
 import ActionButton from "./components/ActionButton";
-import Modal from "./components/Modal"; // Importamos el modal
+import Modal from "./components/Modal";
 
 const LOCAL_IMAGE = "/imagenes/pizza.webp";
 
@@ -40,7 +40,6 @@ export default function CasiPizzaPOS() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
 
-  // ESTADO PARA EL MODAL PERSONALIZADO
   const [modal, setModal] = useState({
     isOpen: false,
     title: "",
@@ -200,9 +199,22 @@ export default function CasiPizzaPOS() {
     });
   };
 
+  // CÁLCULO DEL RESUMEN DIARIO (HOY)
+  const todayStr = new Date().toDateString();
+  const todayOrders = orders.filter(
+    (o) => o.timestamp && new Date(o.timestamp).toDateString() === todayStr
+  );
+
+  const totalToday = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const totalEfectivo = todayOrders
+    .filter((o) => o.paymentMethod === "efectivo")
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+  const totalTransferencia = todayOrders
+    .filter((o) => o.paymentMethod === "transferencia")
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+
   return (
     <main className="pos-container">
-      {/* Componente Modal Custom para reemplazo de Alerts/Confirms */}
       <Modal
         isOpen={modal.isOpen}
         title={modal.title}
@@ -326,10 +338,35 @@ export default function CasiPizzaPOS() {
         </div>
       )}
 
-      {/* VISTA 3: HISTORIAL */}
+      {/* VISTA 3: HISTORIAL CON RESUMEN DIARIO */}
       {view === "history" && (
         <div style={{ flex: 1, padding: "1rem 0" }}>
           <h2 style={{ fontSize: "2rem", color: "#CA3918", marginBottom: "1.25rem" }}>HISTORIAL DE VENTAS</h2>
+
+          {/* TARJETA DE RESUMEN DIARIO */}
+          <div
+            style={{
+              backgroundColor: "#CA3918",
+              color: "#F8FAE3",
+              borderRadius: "1rem",
+              padding: "1.25rem",
+              marginBottom: "1.5rem",
+              border: "2px solid #4EA3CB",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div style={{ fontSize: "1.1rem", opacity: 0.9 }}>
+              Hoy · {todayOrders.length} {todayOrders.length === 1 ? "órden" : "órdenes"}
+            </div>
+            <div style={{ fontSize: "2.75rem", fontWeight: "bold", margin: "0.25rem 0" }}>
+              Q.{totalToday}
+            </div>
+            <div style={{ display: "flex", gap: "1.5rem", fontSize: "1.1rem", marginTop: "0.5rem", borderTop: "1px solid rgba(248,250,227,0.3)", paddingTop: "0.5rem" }}>
+              <span>Efectivo: <strong>Q.{totalEfectivo}</strong></span>
+              <span>Transferencia: <strong>Q.{totalTransferencia}</strong></span>
+            </div>
+          </div>
+
           {loadingHistory ? (
             <p style={{ color: "#4EA3CB", fontSize: "1.2rem" }}>CARGANDO...</p>
           ) : (
