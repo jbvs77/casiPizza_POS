@@ -5,6 +5,7 @@ import HeaderNav from "./components/HeaderNav";
 import ProductCard from "./components/ProductCard";
 import CartHeader from "./components/CartHeader";
 import ActionButton from "./components/ActionButton";
+import Modal from "./components/Modal"; // Importamos el modal
 
 const LOCAL_IMAGE = "/imagenes/pizza.webp";
 
@@ -39,6 +40,17 @@ export default function CasiPizzaPOS() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
 
+  // ESTADO PARA EL MODAL PERSONALIZADO
+  const [modal, setModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+    onConfirm: () => {},
+  });
+
+  const closeModal = () => setModal((prev) => ({ ...prev, isOpen: false }));
+
   const totalAmount = cart.reduce(
     (acc, item) => acc + (typeof item.price === "number" ? item.price * item.qty : 0),
     0
@@ -46,7 +58,13 @@ export default function CasiPizzaPOS() {
 
   const handleItemTap = (product) => {
     if (typeof product.price !== "number") {
-      alert(`El precio de ${product.name} aún está por definirse (Q.tba).`);
+      setModal({
+        isOpen: true,
+        title: "PRECIO PENDIENTE",
+        message: `El precio de ${product.name} aún está por definirse (Q.tba).`,
+        type: "info",
+        onConfirm: closeModal,
+      });
       return;
     }
 
@@ -92,9 +110,18 @@ export default function CasiPizzaPOS() {
     }
   };
 
-  const handleDeleteOrder = async (orderNumber) => {
-    if (!confirm(`¿Estás seguro de eliminar la orden #${orderNumber}?`)) return;
+  const promptDeleteOrder = (orderNumber) => {
+    setModal({
+      isOpen: true,
+      title: "ELIMINAR ORDEN",
+      message: `¿Estás seguro de eliminar la orden #${orderNumber}?`,
+      type: "confirm",
+      onConfirm: () => confirmDeleteOrder(orderNumber),
+    });
+  };
 
+  const confirmDeleteOrder = async (orderNumber) => {
+    closeModal();
     try {
       const res = await fetch(`/api/orders?orderNumber=${orderNumber}`, {
         method: "DELETE",
@@ -102,10 +129,22 @@ export default function CasiPizzaPOS() {
       if (res.ok) {
         setOrders((prev) => prev.filter((o) => o.orderNumber !== orderNumber));
       } else {
-        alert("Error al eliminar la orden");
+        setModal({
+          isOpen: true,
+          title: "ERROR",
+          message: "No se pudo eliminar la orden.",
+          type: "info",
+          onConfirm: closeModal,
+        });
       }
     } catch (err) {
-      alert("Error de conexión");
+      setModal({
+        isOpen: true,
+        title: "ERROR DE CONEXIÓN",
+        message: "Verifica tu red e intenta de nuevo.",
+        type: "info",
+        onConfirm: closeModal,
+      });
     }
   };
 
@@ -127,16 +166,27 @@ export default function CasiPizzaPOS() {
         setCart([]);
         setComments("");
         setView("pos");
-        alert("¡Orden realizada con éxito!");
+        setModal({
+          isOpen: true,
+          title: "¡ÉXITO!",
+          message: "La orden fue procesada correctamente.",
+          type: "info",
+          onConfirm: closeModal,
+        });
       }
     } catch (err) {
-      alert("Error de conexión");
+      setModal({
+        isOpen: true,
+        title: "ERROR DE CONEXIÓN",
+        message: "No se pudo guardar la orden.",
+        type: "info",
+        onConfirm: closeModal,
+      });
     } finally {
       setSavingOrder(false);
     }
   };
 
-  // Formateador de fecha/hora
   const formatDate = (isoString) => {
     if (!isoString) return "";
     const d = new Date(isoString);
@@ -152,6 +202,16 @@ export default function CasiPizzaPOS() {
 
   return (
     <main className="pos-container">
+      {/* Componente Modal Custom para reemplazo de Alerts/Confirms */}
+      <Modal
+        isOpen={modal.isOpen}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        onCancel={closeModal}
+      />
+
       <HeaderNav activeView={view} onViewChange={setView} />
 
       {/* VISTA 1: POS */}
@@ -210,11 +270,9 @@ export default function CasiPizzaPOS() {
         </div>
       )}
 
-      {/* VISTA 2: CHECKOUT (Reorganizada: Resumen -> Comentarios -> Métodos & Botones) */}
+      {/* VISTA 2: CHECKOUT */}
       {view === "checkout" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1.5rem", padding: "1rem 0" }}>
-          
-          {/* 1. ARRIBA: RESUMEN DE ORDEN */}
           <div style={{ width: "100%" }}>
             <h2 style={{ fontSize: "2rem", color: "#CA3918", margin: "0 0 1rem 0" }}>RESUMEN DE ORDEN</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
@@ -233,7 +291,6 @@ export default function CasiPizzaPOS() {
             </div>
           </div>
 
-          {/* 2. EN MEDIO: CAMPO DE COMENTARIOS / NOTAS */}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             <label style={{ fontSize: "1.1rem", color: "#4EA3CB" }}>COMENTARIOS / NOTAS (Opcional):</label>
             <input
@@ -255,7 +312,6 @@ export default function CasiPizzaPOS() {
             />
           </div>
 
-          {/* 3. ABAJO: MÉTODO DE PAGO Y BOTONES DE ACCIÓN */}
           <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div className="actions-grid">
               <ActionButton label="EFECTIVO" variant={paymentMethod === "efectivo" ? "primary" : "neutral"} onClick={() => setPaymentMethod("efectivo")} />
@@ -267,11 +323,10 @@ export default function CasiPizzaPOS() {
               <ActionButton label="CANCELAR" variant="neutral" onClick={() => setView("pos")} />
             </div>
           </div>
-
         </div>
       )}
 
-      {/* VISTA 3: HISTORIAL (Con Fecha y Opción de Eliminar) */}
+      {/* VISTA 3: HISTORIAL */}
       {view === "history" && (
         <div style={{ flex: 1, padding: "1rem 0" }}>
           <h2 style={{ fontSize: "2rem", color: "#CA3918", marginBottom: "1.25rem" }}>HISTORIAL DE VENTAS</h2>
@@ -286,7 +341,7 @@ export default function CasiPizzaPOS() {
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                       <span style={{ color: "#CA3918" }}>Q.{o.total}</span>
                       <button
-                        onClick={() => handleDeleteOrder(o.orderNumber)}
+                        onClick={() => promptDeleteOrder(o.orderNumber)}
                         style={{
                           backgroundColor: "#CA3918",
                           color: "#F8FAE3",
@@ -301,19 +356,16 @@ export default function CasiPizzaPOS() {
                     </div>
                   </div>
 
-                  {/* Fecha y Hora */}
                   <div style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.2rem" }}>
                     {formatDate(o.timestamp)}
                   </div>
 
-                  {/* Comentario si existe */}
                   {o.comments && (
                     <div style={{ marginTop: "0.4rem", padding: "0.3rem 0.5rem", backgroundColor: "#EAEAEA", borderRadius: "0.3rem", fontSize: "0.95rem", color: "#00232F", fontStyle: "italic" }}>
                       <strong>Nota:</strong> {o.comments}
                     </div>
                   )}
 
-                  {/* Detalle de Items */}
                   <div style={{ color: "#00232F", opacity: 0.8, fontSize: "1rem", marginTop: "0.5rem" }}>
                     {o.items?.map((i) => `${i.qty}x ${i.name}`).join(", ")}
                   </div>
