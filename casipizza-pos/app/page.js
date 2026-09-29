@@ -11,8 +11,8 @@ const LOCAL_IMAGE = "/imagenes/pizza.webp";
 
 const PIZZAS_CLASICAS = [  
   { id: "todote", name: "Todo o mejor nadota", price: 50, image: LOCAL_IMAGE },
-  { id: "culpable", name: "La culpable", price: 40, image: LOCAL_IMAGE },
-  { id: "crisis", name: "Crisis / Cita", price: 35, image: LOCAL_IMAGE },    
+  { id: "crisis", name: "Crisis Existencial", price: 40, image: LOCAL_IMAGE },
+  { id: "culpable", name: "Culpables y/o Cita", price: 35, image: LOCAL_IMAGE },    
 ];
 
 const PIZZAS_PREMIUM = [
