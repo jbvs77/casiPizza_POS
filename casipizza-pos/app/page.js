@@ -9,21 +9,21 @@ import Modal from "./components/Modal";
 
 const LOCAL_IMAGE = "/imagenes/pizza.webp";
 
-const PIZZAS_CLASICAS = [
-  { id: "crisis", name: "Crisis", price: 35, image: LOCAL_IMAGE },
+const PIZZAS_CLASICAS = [  
   { id: "todote", name: "Todo o mejor nadota", price: 50, image: LOCAL_IMAGE },
-  { id: "culpable", name: "La culpable", price: 35, image: LOCAL_IMAGE },
+  { id: "culpable", name: "La culpable", price: 40, image: LOCAL_IMAGE },
+  { id: "crisis", name: "Crisis / Cita", price: 35, image: LOCAL_IMAGE },    
 ];
 
 const PIZZAS_PREMIUM = [
-  { id: "margherita", name: "Margherita", price: "Q.tba", image: LOCAL_IMAGE, isPremium: true },
-  { id: "aura", name: "+aura Prosciutto e Rucola", price: "Q.tba", image: LOCAL_IMAGE, isPremium: true },
-  { id: "diavola", name: "Diavola", price: "Q.tba", image: LOCAL_IMAGE, isPremium: true },
-  { id: "marinara", name: "Marinara", price: "Q.tba", image: LOCAL_IMAGE, isPremium: true },
+  { id: "aura", name: "+aura Prosciutto e Rucola", price: 70, image: LOCAL_IMAGE, isPremium: true },
+  { id: "diavola", name: "Diavola", price: 65, image: LOCAL_IMAGE, isPremium: true },
+  { id: "margherita", name: "Margherita", price: 60, image: LOCAL_IMAGE, isPremium: true },    
 ];
 
 const EXTRAS = [
   { id: "burrata", name: "Agrega Burrata Extra", price: 50, image: LOCAL_IMAGE },
+  { id: "porcion", name: "Porcion", price: 10, image: LOCAL_IMAGE },    
 ];
 
 const POSTRES = [
@@ -232,6 +232,7 @@ export default function CasiPizzaPOS() {
           <div>
             <h2 style={categoryTitleStyle}>PIZZAS</h2>
             <div style={{ marginBottom: "1.25rem" }}>
+              
               <span style={subCategoryTitleStyle}>CLÁSICAS</span>
               <div className="products-grid">
                 {PIZZAS_CLASICAS.map((product) => (
@@ -241,17 +242,17 @@ export default function CasiPizzaPOS() {
             </div>
 
             <div>
-              <span style={{ ...subCategoryTitleStyle, color: "#CA3918" }}>★ PREMIUM</span>
+              <span style={subCategoryTitleStyle}>★ PREMIUM ★</span>
               <div className="products-grid">
                 {PIZZAS_PREMIUM.map((product) => (
                   <ProductCard key={product.id} product={product} onClick={() => handleItemTap(product)} />
                 ))}
               </div>
             </div>
-          </div>
 
+          </div>
           <div style={{ marginTop: "1.25rem" }}>
-            <h2 style={categoryTitleStyle}>EXTRAS & BURRATA</h2>
+            <h2 style={categoryTitleStyle}>EXTRAS</h2>
             <div className="products-grid">
               {EXTRAS.map((product) => (
                 <ProductCard key={product.id} product={product} onClick={() => handleItemTap(product)} />
